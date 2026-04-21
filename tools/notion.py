@@ -14,7 +14,7 @@ def query_database():
     notion_reader = NotionPageReader(integration_token=notion_token)
     notion = Client(auth=notion_token)
 
-    print("Authenticating and loading Notion data...")
+    print("Loading notion database")
     documents = notion_reader.load_data(database_ids=config.DATABASE_IDS)
     
     results = []
