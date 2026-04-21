@@ -8,8 +8,9 @@ load_dotenv()
 
 from llama_index.core import PromptTemplate
 
-# Notion Configuration
+# API Keys
 NOTION_TOKEN = os.getenv("NOTION_INTEGRATION_TOKEN")
+DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
 _db_ids_str = os.getenv("NOTION_DATABASE_ID", "")
 DATABASE_IDS = [i.strip() for i in _db_ids_str.split(",") if i.strip()]
 

@@ -2,6 +2,7 @@ import asyncio
 import config
 from llama_index.core.agent.workflow import AgentStream
 from llama_index.core.workflow import Context
+from utils.voice import VoiceListener
 
 async def main():
     # setup agent via config
@@ -11,12 +12,28 @@ async def main():
     ctx = Context(agent)
 
     print("\n=== Jarvis AI Agent (Notion) ===")
-    print("Ask me about your tasks, courses, or deadlines.")
-    print("Type 'exit' to quit.")
+    
+    # Voice Mode prompt
+    voice_choice = input("Enable voice mode? (y/n): ").lower().strip()
+    voice_enabled = voice_choice == 'y' or voice_choice == 'yes'
+    listener = VoiceListener() if voice_enabled else None
+
+    if voice_enabled:
+        print("Voice mode active. Speak naturally, Jarvis will detect when you finish.")
+    else:
+        print("Text mode active. Type your requests below.")
 
     while True:
-        # Note: input() is synchronous, which is fine for a basic CLI loop
-        user_input = input("\nYou: ")
+        if voice_enabled:
+            # Get input from microphone
+            user_input = await listener.get_input()
+            if not user_input:
+                continue
+            print(f"\nYou (Voice): {user_input}")
+        else:
+            # Get input from keyboard
+            user_input = input("\nYou: ")
+            
         if user_input.lower() in ["exit", "quit", "bye"]:
             print("Goodbye sir, have a good day.")
             break
