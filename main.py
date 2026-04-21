@@ -43,7 +43,7 @@ async def main():
         # #     print(f"\nCall {ev.tool_name} with {ev.tool_kwargs}\nReturned: {ev.tool_output}")
         #     if isinstance(ev, AgentStream):
         #         print(f"{ev.delta}", end="", flush=True)
-        # response = await handler
+        response = await handler
         
         print(f"\nJarvis: {response}")
 
