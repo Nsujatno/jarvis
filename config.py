@@ -10,7 +10,8 @@ from llama_index.core import PromptTemplate
 
 # Notion Configuration
 NOTION_TOKEN = os.getenv("NOTION_INTEGRATION_TOKEN")
-DATABASE_IDS = ["25a9a54d4356807b817dd315db02e5d3"]
+_db_ids_str = os.getenv("NOTION_DATABASE_ID", "")
+DATABASE_IDS = [i.strip() for i in _db_ids_str.split(",") if i.strip()]
 
 # ChromaDB Configuration
 CHROMA_DB_PATH = "./chroma_db"
