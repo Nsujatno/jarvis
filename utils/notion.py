@@ -1,6 +1,8 @@
-def extract_properties(page):
+from models.notion import NotionPage
+
+def extract_properties(page, text) -> NotionPage:
     if not page:
-        return {}
+        return None
 
     props = page.get("properties", {}) or {}
     
@@ -25,12 +27,13 @@ def extract_properties(page):
     formula_obj = (props.get("days remaining") or {}).get("formula") or {}
     urgency = formula_obj.get("string", "N/A")
     
-    return {
-        "name": name,
-        "class": class_name,
-        "due_date": due_date,
-        "status": status,
-        "status_color": status_color,
-        "urgency": urgency,
-        "notion_url": page.get("url")
-    }
+    return NotionPage(
+        name=name,
+        text=text,
+        course_class=class_name,
+        due_date=due_date,
+        status=status,
+        status_color=status_color,
+        urgency=urgency,
+        notion_url=page.get("url")
+    )

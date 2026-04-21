@@ -1,16 +1,12 @@
-import os
 import chromadb
-from dotenv import load_dotenv
-from llama_index.core import VectorStoreIndex, StorageContext
+from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.chroma import ChromaVectorStore
-
-# Load environment for OpenAI API Key
-load_dotenv()
+import config
 
 def query_db():
     # 1. Connect to the existing Chroma local folder
-    db = chromadb.PersistentClient(path="./chroma_db")
-    chroma_collection = db.get_or_create_collection("notion_docs")
+    db = chromadb.PersistentClient(path=config.CHROMA_DB_PATH)
+    chroma_collection = db.get_or_create_collection(config.COLLECTION_NAME)
     
     # 2. Setup the Vector Store
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
