@@ -20,6 +20,8 @@ COLLECTION_NAME = "notion_docs"
 
 # Agent Configuration
 LLM = OpenAI(model="gpt-4o-mini")
+# gpt-3.5-turbo
+# gpt-4o-mini
 
 REACT_SYSTEM_HEADER_STR = """\
 You are a helpful AI assistant named Jarvis.
@@ -76,7 +78,7 @@ def setup_agent():
     notion_tool = FunctionTool.from_defaults(
         fn=query_database,
         name="query_notion_database",
-        description="Queries the Notion database to get the latest list of tasks, courses, status, and content."
+        description="Queries the Notion database to get the latest list of tasks, courses, status, and content. IMPORTANT: This tool takes NO arguments. Your Action Input must be EXACTLY {}"
     )
 
     browser_tool = FunctionTool.from_defaults(
@@ -88,7 +90,7 @@ def setup_agent():
     tools = [notion_tool, browser_tool]
 
     # Create agent
-    agent = ReActAgent(tools=tools, llm=LLM, max_iterations=5)
+    agent = ReActAgent(tools=tools, llm=LLM, max_iterations=3)
     agent.update_prompts({"react_header": PromptTemplate(REACT_SYSTEM_HEADER_STR)})
     
     return agent
