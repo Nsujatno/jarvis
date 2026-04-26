@@ -1,0 +1,3 @@
+timestamp,sample_index,query,predicted_tools,reference_tools,response_preview,tool_accuracy,goal_accuracy
+2026-04-26 11:36:19,1,What should I do today?,"query_notion_database,query_notion_database",query_notion_database,"You should focus on completing ""Hw 6"" as it is due today. You can find it [here](https://www.notion.so/Hw-6-3499a54d435680bebcbbdd5080f95951). Additionally, consider starting on your presentation, whi",0.0,0.0
+2026-04-26 11:36:26,2,Open my notion,open_browser_url,open_browser_url,You can now access your Notion workspace in the browser. Let me know if you need help with anything else!,0.0,0.0

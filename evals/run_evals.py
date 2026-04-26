@@ -1,6 +1,9 @@
 import asyncio
 import config
+import csv
 import uuid
+from datetime import datetime
+from pathlib import Path
 from ragas.metrics import ToolCallAccuracy, _AgentGoalAccuracyWithoutReference
 from ragas.llms import llm_factory
 from ragas.dataset_schema import MultiTurnSample
@@ -15,8 +18,12 @@ llm = llm_factory("gpt-4o-mini", provider="openai", client=client)
 
 agent = setup_agent()
 
+RESULTS_DIR = Path(__file__).parent / "results"
+RESULTS_DIR.mkdir(exist_ok=True)
+
 async def run():
     tool_accuracy = ToolCallAccuracy()
+    results: list[dict] = []
     goal_accuracy = _AgentGoalAccuracyWithoutReference(llm=llm)
 
     print(f"\n{'='*80}")
@@ -36,27 +43,35 @@ async def run():
         # for evals need: [HumanMessage, AIMessage(with tool calls), ToolMessage, AIMessage(final answer)]
         user_input = [HumanMessage(content=query)]
 
-        async for ev in handler.stream_events():
-            # streaming for me to debug
-            if isinstance(ev, AgentStream):
-                print(f"{ev.delta}", end="", flush=True)
-            # if tool call, checking by class name avoids circular imports
-            if type(ev).__name__ == "ToolCallResult":
-                # generate random tool call id
-                dummy_id = f"call_{uuid.uuid4().hex[:8]}"
+        async def process_agent_run():
+            async for ev in handler.stream_events():
+                # streaming for me to debug
+                if isinstance(ev, AgentStream):
+                    print(f"{ev.delta}", end="", flush=True)
+                # if tool call, checking by class name avoids circular imports
+                if type(ev).__name__ == "ToolCallResult":
+                    # generate random tool call id
+                    dummy_id = f"call_{uuid.uuid4().hex[:8]}"
 
-                # record calling a tool
-                user_input.append(AIMessage(
-                    content="", 
-                    tool_calls=[ToolCall(name=ev.tool_name, args=ev.tool_kwargs)]
-                ))
-                
-                # record tool response
-                user_input.append(ToolMessage(content=str(ev.tool_output), tool_call_id=dummy_id))
-        
-        # get final answer
-        response = await handler
-        user_input.append(AIMessage(content=str(response)))
+                    # record calling a tool
+                    user_input.append(AIMessage(
+                        content="", 
+                        tool_calls=[ToolCall(name=ev.tool_name, args=ev.tool_kwargs)]
+                    ))
+                    
+                    # record tool response
+                    user_input.append(ToolMessage(content=str(ev.tool_output), tool_call_id=dummy_id))
+            
+            # get final answer
+            response = await handler
+            user_input.append(AIMessage(content=str(response)))
+
+        try:
+            # 30 second timeout to prevent infinite loops
+            await asyncio.wait_for(process_agent_run(), timeout=30.0)
+        except asyncio.TimeoutError:
+            print("\n[Error] Agent execution timed out. Terminating infinite loop.")
+            user_input.append(AIMessage(content="Agent execution timed out due to possible infinite loop."))
 
         # dynamic sampling of 
         dynamic_sample = MultiTurnSample(
@@ -83,6 +98,28 @@ async def run():
         
         print(f"Result:     ToolAcc: {t_score:.2f} | GoalAcc: {g_score:.2f}")
         print(f"{'-'*40}\n")
+
+        results.append({
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "sample_index": i,
+            "query": query,
+            "predicted_tools": ",".join(pred_tools),
+            "reference_tools": ",".join(ref_tools),
+            "response_preview": final_resp[:200],
+            "tool_accuracy": round(t_score, 4),
+            "goal_accuracy": round(g_score, 4),
+        })
+
+    # Write timestamped CSV to evals/results/
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_path = RESULTS_DIR / f"eval_{timestamp}.csv"
+    fieldnames = ["timestamp", "sample_index", "query", "predicted_tools", "reference_tools",
+                  "response_preview", "tool_accuracy", "goal_accuracy"]
+    with csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(results)
+    print(f"Results saved to {csv_path}")
 
 
 
